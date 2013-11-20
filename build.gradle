@@ -1,0 +1,36 @@
+buildscript {
+    repositories {
+        maven { url 'http://repo1.maven.org/maven2' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.6.+'
+    }
+}
+apply plugin: 'android-library'
+
+dependencies {
+}
+
+android {
+    sourceSets {
+        main {
+            manifest.srcFile 'library/AndroidManifest.xml'
+
+            java {
+                srcDir 'library/src/'
+            }
+            res {
+                srcDir 'library/res/'
+            }
+        }
+    }
+
+    compileSdkVersion 19
+    buildToolsVersion "19.0.0"
+
+    defaultConfig {
+        minSdkVersion 4
+        targetSdkVersion 19
+    }
+}
+
