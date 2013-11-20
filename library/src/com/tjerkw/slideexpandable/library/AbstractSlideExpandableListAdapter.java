@@ -54,6 +54,12 @@ public abstract class AbstractSlideExpandableListAdapter extends WrapperListAdap
 	 */
 	private final SparseIntArray viewHeights = new SparseIntArray(10);
 
+	/**
+	 * An optional listener provided by the application in order
+	 * to be notified about changes.
+	 */
+	private ExpandCollapseListener expandCollapseListener;
+
 	public AbstractSlideExpandableListAdapter(ListAdapter wrapped) {
 		super(wrapped);
 	}
@@ -142,6 +148,15 @@ public abstract class AbstractSlideExpandableListAdapter extends WrapperListAdap
 		enableFor(more, itemToolbar, position);
 	}
 
+	/**
+	 * Sets a listener allowing application to be notified of changes.
+	 *
+	 * @param listener to be notified of changes.
+	 */
+	public void setExpandCollapseListener(ExpandCollapseListener listener) {
+		expandCollapseListener = listener;
+	}
+
 
 	private void enableFor(final View button, final View target, final int position) {
 		if(target == lastOpen && position!=lastOpenPosition) {
@@ -192,6 +207,9 @@ public abstract class AbstractSlideExpandableListAdapter extends WrapperListAdap
 							? ExpandCollapseAnimation.COLLAPSE
 							: ExpandCollapseAnimation.EXPAND;
 
+					int collapsedPosition = -1;
+					int expandedPosition = -1;
+
 					// remember the state
 					if (type == ExpandCollapseAnimation.EXPAND) {
 						openItems.set(position, true);
@@ -205,13 +223,26 @@ public abstract class AbstractSlideExpandableListAdapter extends WrapperListAdap
 								animateView(lastOpen, ExpandCollapseAnimation.COLLAPSE);
 							}
 							openItems.set(lastOpenPosition, false);
+							collapsedPosition = lastOpenPosition;
 						}
 						lastOpen = target;
 						lastOpenPosition = position;
+						expandedPosition = position;
 					} else if (lastOpenPosition == position) {
 						lastOpenPosition = -1;
+						collapsedPosition = position;
 					}
 					animateView(target, type);
+
+					// notify listeners at the end to allow reentrancy
+					if (expandCollapseListener != null) {
+						if (collapsedPosition != -1) {
+							expandCollapseListener.onCollapse(collapsedPosition);
+						}
+						if (expandedPosition != -1) {
+							expandCollapseListener.onExpand(expandedPosition);
+						}
+					}
 				}
 			}
 		});
@@ -257,8 +288,12 @@ public abstract class AbstractSlideExpandableListAdapter extends WrapperListAdap
 			if(lastOpen != null) {
 				animateView(lastOpen, ExpandCollapseAnimation.COLLAPSE);
 			}
+			final int collapsedPosition = lastOpenPosition;
 			openItems.set(lastOpenPosition, false);
 			lastOpenPosition = -1;
+			if (expandCollapseListener != null) {
+				expandCollapseListener.onCollapse(collapsedPosition);
+			}
 			return true;
 		}
 		return false;
